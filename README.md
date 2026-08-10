@@ -1,93 +1,240 @@
-# product-repository-async
+﻿# Product Repository (Async)
+
+Beginner level task for practicing asynchronous methods and the task-based asynchronous pattern (TAP).
+
+Estimated time to complete the task - 2h.
+
+The task requires .NET 10 SDK installed.
 
 
+## Task Description
 
-## Getting started
+The `ProductRepository` class represents a product storage service and provides a set of methods for managing the list of products. The class uses the `IDatabase` interface, which represents a simple [document-oriented database](https://en.wikipedia.org/wiki/Document-oriented_database) for storing collections and collection elements (documents). The `Product` class represents a product and contains the product data.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Class diagram 1. The `ProductRepository` class.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+![ProductRepository](images/product-repository-async.png)
 
-## Add your files
+In this task, you have to implement four methods of the `ProductRepository` class. The methods should be asynchronous and follow the [task-based asynchronous pattern](https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/task-based-asynchronous-pattern-tap).
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+* The `ProductRepository` class is the implementation of the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) that provides four basic operations of persistent storage: [create, read, update, and delete](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) (CRUD operations).
+* The [constructor injection](https://freecontent.manning.com/understanding-constructor-injection/) technique is used to implement the [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) pattern in the `ProductRepository` class; the `IDatabase` dependency is injected as an argument of the class constructor.
+* The methods of the `ProductRepository` class should throw exceptions in the case of issues. See the comment documentation for exception classes in the code files.
+* The `IDatabase` interface contains a set of methods to manage collections and collection elements. The `Database` class in the [ProductRepositoryAsync.Tests](ProductRepositoryAsync.Tests) project implements the `IDatabase` interface and represents in-memory data storage for testing purposes. The database methods are implemented as async methods and follow the TAP.
+* The database stores data in the form of key-value pairs, which are grouped together using a unique key. Both the key and value in the pair are strings.
+  * Use the keys from Table 1 to store the property values of the [Product](ProductRepositoryAsync/Product.cs#L8) class.
+  * Use the [InvariantCulture](https://learn.microsoft.com/en-us/dotnet/api/system.globalization.cultureinfo.invariantculture) to format the property values that are not of the [string type](https://learn.microsoft.com/en-us/dotnet/api/system.string).
 
+Table 1. List of product properties and corresponding keys in the database.
+
+| Product Property | Database Key |
+|------------------|--------------|
+| Name             | name         |
+| Category         | category     |
+| UnitPrice        | price        |
+| UnitsInStock     | in-stock     |
+| Discontinued     | discontinued |
+
+
+### 1. Implement the ProductRepository Methods.
+
+The [IProductRepository](ProductRepositoryAsync/IProductRepository.cs#L6) interface already declares TAP async methods (`GetProductAsync`, `AddProductAsync`, `RemoveProductAsync`, and `UpdateProductAsync`). Implement these four methods in the [ProductRepository](ProductRepositoryAsync/ProductRepository.cs#L6) class.
+
+
+### 2. The GetProduct Operation.
+
+In this section, you have to implement the `GetProductAsync` asynchronous method that returns a product from the product repository. The interaction between the repository and the database is shown in the sequence diagram below.
+
+Sequence diagram 1. The GetProduct operation.
+
+![GetProductAsync Sequence Diagram](images/get-product.png)
+
+1. Add the [async](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/async) modifier to the method signature to specify that the method is asynchronous. Remove the code that is added to the method body.
+
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+}
 ```
-cd existing_repo
-git remote add origin https://autocode.git.epam.com/dotnet-tasks/concurrency/net10/product-repository-async.git
-git branch -M main
-git push -uf origin main
+
+2. Initialize a new instance of the [Product](ProductRepositoryAsync/Product.cs#L8) class and return the object.
+
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    return new Product
+    {
+        Id = productId,
+        Name = string.Empty,
+        Category = string.Empty,
+    };
+}
 ```
 
-## Integrate with your tools
+3. Invoke the [IsCollectionExistAsync](ProductRepositoryAsync/IDatabase.cs#L14) method to check if there is a collection in the database with the name specified in the `productCollectionName` field. Use the [await](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/await) operator to await for an asynchronous operation to complete.
 
-* [Set up project integrations](https://autocode.git.epam.com/dotnet-tasks/concurrency/net10/product-repository-async/-/settings/integrations)
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    OperationResult result = await this.database.IsCollectionExistAsync(this.productCollectionName, out bool collectionExists);
 
-## Collaborate with your team
+    ...
+}
+```
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+4. The `IsCollectionExistAsync` method returns an [OperationResult](ProductRepositoryAsync/OperationResult.cs#L6) enum that represents the result of the database operation. Throw a [DatabaseConnectionException](ProductRepositoryAsync/DatabaseConnectionException.cs#L9), if the database operation returns a connection issue. Throw a [RepositoryException](ProductRepositoryAsync/RepositoryException.cs#L9) in the case of any other issue.
 
-## Test and Deploy
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    OperationResult result = await this.database.IsCollectionExistAsync(this.productCollectionName, out bool collectionExists);
 
-Use the built-in continuous integration in GitLab.
+    if (result == OperationResult.ConnectionIssue)
+    {
+        throw new DatabaseConnectionException();
+    }
+    else if (result != OperationResult.Success)
+    {
+        throw new RepositoryException();
+    }
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+    ...
+}
+```
 
-***
+5. The `IsCollectionExistAsync` method has the `collectionExists` [out parameter](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/out-parameter-modifier), which indicates the database has a collection with the specified name. Throw a [CollectionNotFoundException](ProductRepositoryAsync/CollectionNotFoundException.cs#L9), if `collectionExists` is `false`.
 
-# Editing this README
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    OperationResult result = await this.database.IsCollectionExistAsync(this.productCollectionName, out bool collectionExists);
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+    if (result == OperationResult.ConnectionIssue)
+    {
+        throw new DatabaseConnectionException();
+    }
+    else if (result != OperationResult.Success)
+    {
+        throw new RepositoryException();
+    }
 
-## Suggestions for a good README
+    if (!collectionExists)
+    {
+        throw new CollectionNotFoundException();
+    }
+}
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+6. Invoke the [IsCollectionElementExistAsync](ProductRepositoryAsync/IDatabase.cs#L23) method to check if there is a collection element in the database with the specified identifier.
 
-## Name
-Choose a self-explaining name for your project.
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    ...
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+    result = await this.database.IsCollectionElementExistAsync(this.productCollectionName, productId, out bool collectionElementExists);
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+    ...
+}
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+7. Handle the `IsCollectionElementExistAsync` method result and throw an exception if an error occurs.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+8. The `IsCollectionElementExistAsync` method has the `collectionElementExists` out parameter, which indicates the database has a collection element with the specified identifier. Throw a [ProductNotFoundException](ProductRepositoryAsync/ProductNotFoundException.cs#L9), if `collectionElementExists` is `false`.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+9. Invoke the [GetCollectionElementAsync](ProductRepositoryAsync/IDatabase.cs#L47) method to get the collection element with the specified identifier.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    ...
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+    result = await this.database.GetCollectionElementAsync(this.productCollectionName, productId, out IDictionary<string, string> data);
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+    ...
+}
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+10. Handle the `GetCollectionElementAsync` method result and throw an exception if an error occurs.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+11. Set the `Product` object properties using the data in the `data` dictionary.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```cs
+public async Task<Product> GetProductAsync(int productId)
+{
+    ...
 
-## License
-For open source projects, say how it is licensed.
+    return new Product
+    {
+        Id = productId,
+        Name = data["name"],
+        Category = data["category"],
+        UnitPrice = decimal.Parse(data["price"], CultureInfo.InvariantCulture),
+        UnitsInStock = int.Parse(data["in-stock"], CultureInfo.InvariantCulture),
+        Discontinued = bool.Parse(data["discontinued"]),
+    };
+}
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+12. Complete the section:
+    * Build the solution and make sure there are no compilation errors.
+    * Run the unit tests and make sure the `GetProductAsync` unit tests are *green*.
+    * Commit the changes, specifying the commit message "Add the implementation for the GetProductAsync method.".
+
+
+### 3. The RemoveProduct Operation.
+
+In this section, you have to implement the `RemoveProductAsync` asynchronous method that removes a product from the product repository. The interaction between the repository and the database is shown in the sequence diagram below.
+
+Sequence diagram 2. The RemoveProduct operation.
+
+![RemoveProductAsync Sequence Diagram](images/remove-product.png)
+
+After making the changes,
+  * Build the solution and make sure there are no compilation errors.
+  * Run the unit tests and make sure the `RemoveProductAsync` unit tests are *green*.
+  * Commit the changes, specifying the commit message "Add the implementation for the RemoveProductAsync method.".
+
+
+### 4. The AddProduct Operation.
+
+In this section, you have to implement the `AddProductAsync` asynchronous method that adds a product to the product repository. The interaction between the repository and the database is shown in the sequence diagram below.
+
+Sequence diagram 3. The AddProduct operation.
+
+![AddProductAsync Sequence Diagram](images/add-product.png)
+
+In the beginning of the method, check the product data and raise an [ArgumentException](https://learn.microsoft.com/en-us/dotnet/api/system.argumentexception) if the data does not meet these criteria:
+  * `Name` and `Category` should not contain an empty string or a string with whitespace characters only.
+  * `UnitPrice` should be greater or equals zero.
+  * `UnitsInStock` should be greater or equals zero.
+
+If you have the [SonarLint plugin](https://www.google.com/search?q=sonarlint+visual+studio) installed, the plugin may raise the [S4457 issue](https://rules.sonarsource.com/csharp/RSPEC-4457) that recommends splitting the method into two: an outer method handling the parameter checks and an inner method to handle the iterator block with the async/await pattern. Follow the recommendations in the issue description.
+
+After making the changes,
+  * Build the solution and make sure there are no compilation errors.
+  * Run the unit tests and make sure the `AddProductAsync` unit tests are *green*.
+  * Commit the changes, specifying the commit message "Add the implementation for the AddProductAsync method.".
+
+
+### 5. The UpdateProduct Operation.
+
+In this section, you have to implement the `UpdateProductAsync` asynchronous method that updates a product in the product repository. The interaction between the repository and the database is shown in the sequence diagram below.
+
+Sequence diagram 4. The UpdateProduct operation.
+
+![UpdateProductAsync Sequence Diagram](images/update-product.png)
+
+In the beginning of the method, check the product data and raise an `ArgumentException` if the data does not meet the criteria described in the previous section.
+
+After making the changes,
+  * Build the solution and make sure there are no compilation errors.
+  * Run the unit tests and make sure the `UpdateProductAsync` unit tests are *green*.
+  * Commit the changes, specifying the commit message "Add the implementation for the UpdateProductAsync method.".
+
+
+## See also
+
+* [Task-based asynchronous pattern (TAP)](https://learn.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/task-based-asynchronous-pattern-tap)
+* [Asynchronous programming](https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/)
+* [Design the infrastructure persistence layer](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/infrastructure-persistence-layer-design#the-repository-pattern)
