@@ -37,6 +37,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -68,6 +70,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -96,6 +100,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -126,6 +132,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -159,6 +167,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -195,6 +205,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -235,6 +247,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
@@ -271,6 +285,8 @@ internal sealed class Database : IDatabase
                 return Task.FromResult(OperationResult.ConnectionIssue);
             case true:
                 return Task.FromResult(OperationResult.Failure);
+            default:
+                break;
         }
 
         if (!IsValidCollectionName(collectionName))
