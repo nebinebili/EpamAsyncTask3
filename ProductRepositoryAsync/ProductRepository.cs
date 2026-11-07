@@ -142,9 +142,9 @@ public class ProductRepository : IProductRepository
     {
         ArgumentNullException.ThrowIfNull(product);
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(nameof(product));
+        ArgumentException.ThrowIfNullOrWhiteSpace(product.Name, nameof(product));
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(nameof(product));
+        ArgumentException.ThrowIfNullOrWhiteSpace(product.Category, nameof(product));
 
         if (product.UnitPrice < 0)
         {
