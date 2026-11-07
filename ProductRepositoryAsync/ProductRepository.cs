@@ -138,6 +138,25 @@ public class ProductRepository : IProductRepository
         return this.UpdateProductAsyncCore(product);
     }
 
+    private static void ValidateProduct(Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(nameof(product));
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(nameof(product));
+
+        if (product.UnitPrice < 0)
+        {
+            throw new ArgumentException("Unit price cannot be negative.", nameof(product));
+        }
+
+        if (product.UnitsInStock < 0)
+        {
+            throw new ArgumentException("Units in stock cannot be negative.", nameof(product));
+        }
+    }
+
     private async Task UpdateProductAsyncCore(Product product)
     {
         OperationResult collectionResult = await this.database.IsCollectionExistAsync(this.productCollectionName, out bool collectionExists);
@@ -180,7 +199,7 @@ public class ProductRepository : IProductRepository
             ["category"] = product.Category!,
             ["price"] = product.UnitPrice.ToString(CultureInfo.InvariantCulture),
             ["in-stock"] = product.UnitsInStock.ToString(CultureInfo.InvariantCulture),
-            ["discontinued"] = product.Discontinued.ToString(CultureInfo.InvariantCulture)
+            ["discontinued"] = product.Discontinued.ToString(CultureInfo.InvariantCulture),
         };
 
         OperationResult updateResult = await this.database.UpdateCollectionElementAsync(this.productCollectionName, product.Id, data);
@@ -193,25 +212,6 @@ public class ProductRepository : IProductRepository
         if (updateResult != OperationResult.Success)
         {
             throw new RepositoryException();
-        }
-    }
-
-    private static void ValidateProduct(Product product)
-    {
-        ArgumentNullException.ThrowIfNull(product);
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(product.Name, nameof(product));
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(product.Category, nameof(product));
-
-        if (product.UnitPrice < 0)
-        {
-            throw new ArgumentException("Unit price cannot be negative.", nameof(product));
-        }
-
-        if (product.UnitsInStock < 0)
-        {
-            throw new ArgumentException("Units in stock cannot be negative.", nameof(product));
         }
     }
 
